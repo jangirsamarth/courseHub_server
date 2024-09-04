@@ -30,7 +30,7 @@ export const register = TryCatch(async (req, res) => {
       user,
       otp,
     },
-    process.env.Activation_Secret,
+    process.env.ACTIVATION_SECRET,
     {
       expiresIn: "5m",
     }
@@ -92,7 +92,7 @@ export const loginUser = TryCatch(async (req, res) => {
       message: "wrong Password",
     });
 
-  const token = jwt.sign({ _id: user._id }, process.env.Jwt_Sec, {
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_SEC, {
     expiresIn: "15d",
   });
 

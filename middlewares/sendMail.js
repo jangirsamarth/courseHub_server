@@ -3,9 +3,9 @@ import { createTransport } from "nodemailer";
 const sendMail = async (email, subject, data) => {
   const transport = createTransport({
     host: "smtp.gmail.com",
-    port: process.env.port_pass,  // 465 prev
+    port: process.env.PORT_PASS,  // 465 prev
     auth: {
-      user: process.env.Gmail,
+      user: process.env.GMAIL,
       pass: process.env.Password,
     },
   });
@@ -58,7 +58,7 @@ const sendMail = async (email, subject, data) => {
 `;
 
   await transport.sendMail({
-    from: process.env.Gmail,
+    from: process.env.GMAIL,
     to: email,
     subject,
     html,
@@ -70,10 +70,10 @@ export default sendMail;
 export const sendForgotMail = async (subject, data) => {
   const transport = createTransport({
     host: "smtp.gmail.com",
-    port: process.env.port_pass,  // 465 prev
+    port: process.env.PORT_PASS,  // 465 prev
     auth: {
-      user: process.env.Gmail,
-      pass: process.env.Password,
+      user: process.env.GMAIL,
+      pass: process.env.PASSWORD,
     },
   });
 
@@ -142,7 +142,7 @@ export const sendForgotMail = async (subject, data) => {
 `;
 
   await transport.sendMail({
-    from: process.env.Gmail,
+    from: process.env.GMAIL,
     to: data.email,
     subject,
     html,
