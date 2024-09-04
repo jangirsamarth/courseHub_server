@@ -3,7 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import sendMail, { sendForgotMail } from "../middlewares/sendMail.js";
 import TryCatch from "../middlewares/TryCatch.js";
-
+import dotenv from "dotenv";
+dotenv.config();
 export const register = TryCatch(async (req, res) => {
   const { email, name, password } = req.body;
 
