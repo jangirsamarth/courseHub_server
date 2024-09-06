@@ -119,7 +119,7 @@ export const forgotPassword = TryCatch(async (req, res) => {
       message: "No User with this email",
     });
 
-  const token = jwt.sign({ email }, process.env.Forgot_Secret);
+  const token = jwt.sign({ email }, process.env.FORGOT_SECRET);
 
   const data = { email, token };
 
@@ -135,7 +135,7 @@ export const forgotPassword = TryCatch(async (req, res) => {
 });
 
 export const resetPassword = TryCatch(async (req, res) => {
-  const decodedData = jwt.verify(req.query.token, process.env.Forgot_Secret);
+  const decodedData = jwt.verify(req.query.token, process.env.FORGOT_SECRET);
 
   const user = await User.findOne({ email: decodedData.email });
 
