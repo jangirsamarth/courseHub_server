@@ -1,27 +1,31 @@
 import { createTransport } from "nodemailer";
 
+// Configure the email transport using Gmail SMTP
 const transport = createTransport({
   host: "smtp.gmail.com",
-  port: process.env.PORT_PASS,
+  port: 587, // Use 587 for TLS (startTLS enabled)
+  secure: false, // Use 'false' for TLS, true for SSL
   auth: {
-    user: process.env.GMAIL,
-    pass: process.env.PASSWORD,
+    user: process.env.GMAIL, // Your Gmail address
+    pass: process.env.PASSWORD, // Your Gmail password or app-specific password
   },
 });
 
+// Function to send the email
 const sendEmail = async (to, subject, html) => {
   try {
     await transport.sendMail({
-      from: process.env.GMAIL,
-      to,
-      subject,
-      html,
+      from: process.env.GMAIL, // Sender's email
+      to, // Recipient's email
+      subject, // Email subject
+      html, // Email content (HTML)
     });
   } catch (error) {
-    console.error(`Failed to send email to ${to}:`, error);
+    console.error(`Failed to send email to ${to}:`, error); // Handle email sending failure
   }
 };
 
+// Function to send OTP verification email
 const sendMail = async (email, subject, data) => {
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -63,7 +67,7 @@ const sendMail = async (email, subject, data) => {
 <body>
     <div class="container">
         <h1>OTP Verification</h1>
-        <p>Hello ${data.name}, your (One-Time Password) for your account verification is.</p>
+        <p>Hello ${data.name}, your (One-Time Password) for your account verification is:</p>
         <p class="otp">${data.otp}</p>
     </div>
 </body>
@@ -73,6 +77,7 @@ const sendMail = async (email, subject, data) => {
   await sendEmail(email, subject, html);
 };
 
+// Function to send password reset email
 const sendForgotMail = async (subject, data) => {
   const html = `<!DOCTYPE html>
 <html lang="en">

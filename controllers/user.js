@@ -4,30 +4,37 @@ import jwt from "jsonwebtoken";
 import sendMail, { sendForgotMail } from "../middlewares/sendMail.js";
 import TryCatch from "../middlewares/TryCatch.js";
 import dotenv from "dotenv";
+
 dotenv.config();
+
 export const register = TryCatch(async (req, res) => {
   const { email, name, password } = req.body;
 
   let user = await User.findOne({ email });
 
-  if (user)
+  if (user) {
     return res.status(400).json({
-      message: "User Already exists",
+      message: "User already exists",
     });
+  }
 
   const hashPassword = await bcrypt.hash(password, 10);
 
-  user = {
+  user = new User({
     name,
     email,
     password: hashPassword,
-  };
+  });
 
   const otp = Math.floor(Math.random() * 1000000);
 
   const activationToken = jwt.sign(
     {
-      user,
+      user: {
+        name: user.name,
+        email: user.email,
+        password: user.password,
+      },
       otp,
     },
     process.env.ACTIVATION_SECRET,
@@ -41,10 +48,10 @@ export const register = TryCatch(async (req, res) => {
     otp,
   };
 
-  await sendMail(email, "E learning", data);
+  await sendMail(email, "E-learning OTP", data);
 
   res.status(200).json({
-    message: "Otp send to your mail",
+    message: "OTP sent to your email",
     activationToken,
   });
 });
@@ -52,26 +59,30 @@ export const register = TryCatch(async (req, res) => {
 export const verifyUser = TryCatch(async (req, res) => {
   const { otp, activationToken } = req.body;
 
-  const verify = jwt.verify(activationToken, process.env.Activation_Secret);
+  const verify = jwt.verify(activationToken, process.env.ACTIVATION_SECRET);
 
-  if (!verify)
+  if (!verify) {
     return res.status(400).json({
-      message: "Otp Expired",
+      message: "Invalid or expired OTP",
     });
+  }
 
-  if (verify.otp !== otp)
+  if (verify.otp !== otp) {
     return res.status(400).json({
-      message: "Wrong Otp",
+      message: "Incorrect OTP",
     });
+  }
+
+  const { name, email, password } = verify.user;
 
   await User.create({
-    name: verify.user.name,
-    email: verify.user.email,
-    password: verify.user.password,
+    name,
+    email,
+    password,
   });
 
   res.json({
-    message: "User Registered",
+    message: "User registered successfully",
   });
 });
 
@@ -80,24 +91,26 @@ export const loginUser = TryCatch(async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (!user)
+  if (!user) {
     return res.status(400).json({
-      message: "No User with this email",
+      message: "No user found with this email",
     });
+  }
 
-  const mathPassword = await bcrypt.compare(password, user.password);
+  const isPasswordMatch = await bcrypt.compare(password, user.password);
 
-  if (!mathPassword)
+  if (!isPasswordMatch) {
     return res.status(400).json({
-      message: "wrong Password",
+      message: "Incorrect password",
     });
+  }
 
   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "15d",
   });
 
   res.json({
-    message: `Welcome back ${user.name}`,
+    message: `Welcome back, ${user.name}`,
     token,
     user,
   });
@@ -105,6 +118,12 @@ export const loginUser = TryCatch(async (req, res) => {
 
 export const myProfile = TryCatch(async (req, res) => {
   const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found",
+    });
+  }
 
   res.json({ user });
 });
@@ -114,54 +133,54 @@ export const forgotPassword = TryCatch(async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (!user)
+  if (!user) {
     return res.status(404).json({
-      message: "No User with this email",
+      message: "No user found with this email",
     });
+  }
 
-  const token = jwt.sign({ email }, process.env.FORGOT_SECRET);
+  const token = jwt.sign({ email }, process.env.FORGOT_SECRET, {
+    expiresIn: "10m",
+  });
 
   const data = { email, token };
 
-  await sendForgotMail("Course Hub", data);
+  await sendForgotMail("Reset Your Password", data);
 
   user.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
-
   await user.save();
 
   res.json({
-    message: "Reset Password Link is send to you mail",
+    message: "Password reset link sent to your email",
   });
 });
 
 export const resetPassword = TryCatch(async (req, res) => {
-  const decodedData = jwt.verify(req.query.token, process.env.FORGOT_SECRET);
+  const { token } = req.query;
+
+  const decodedData = jwt.verify(token, process.env.FORGOT_SECRET);
 
   const user = await User.findOne({ email: decodedData.email });
 
-  if (!user)
+  if (!user) {
     return res.status(404).json({
-      message: "No user with this email",
-    });
-
-  if (user.resetPasswordExpire === null)
-    return res.status(400).json({
-      message: "Token Expired",
-    });
-
-  if (user.resetPasswordExpire < Date.now()) {
-    return res.status(400).json({
-      message: "Token Expired",
+      message: "No user found with this email",
     });
   }
 
-  const password = await bcrypt.hash(req.body.password, 10);
+  if (!user.resetPasswordExpire || user.resetPasswordExpire < Date.now()) {
+    return res.status(400).json({
+      message: "Password reset token has expired",
+    });
+  }
 
-  user.password = password;
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
+  user.password = hashedPassword;
   user.resetPasswordExpire = null;
-
   await user.save();
 
-  res.json({ message: "Password Reset" });
+  res.json({
+    message: "Password has been reset successfully",
+  });
 });
