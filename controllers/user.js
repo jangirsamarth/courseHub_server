@@ -92,7 +92,7 @@ export const loginUser = TryCatch(async (req, res) => {
       message: "wrong Password",
     });
 
-  const token = jwt.sign({ _id: user._id }, process.env.JWT_SEC, {
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "15d",
   });
 
