@@ -1,10 +1,18 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/User.js";
+import passport from "passport";  // Assuming Passport.js is configured for Google Auth
 
 // Middleware to authenticate the user
 export const isAuth = async (req, res, next) => {
   try {
-    // Extract token from the Authorization header
+    // First, check if user is authenticated via Google (from Passport session)
+    if (req.isAuthenticated()) {
+      // If the user is authenticated via Google, attach user to req and proceed
+      req.user = req.user;
+      return next();
+    }
+
+    // If not authenticated via Google, fallback to JWT token verification
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {

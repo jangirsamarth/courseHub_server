@@ -4,9 +4,11 @@ import jwt from "jsonwebtoken";
 import sendMail, { sendForgotMail } from "../middlewares/sendMail.js";
 import TryCatch from "../middlewares/TryCatch.js";
 import dotenv from "dotenv";
+import passport from "passport";
 
 dotenv.config();
 
+// Register a new user with email and password
 export const register = TryCatch(async (req, res) => {
   const { email, name, password } = req.body;
 
@@ -56,6 +58,7 @@ export const register = TryCatch(async (req, res) => {
   });
 });
 
+// Verify user with OTP and complete registration
 export const verifyUser = TryCatch(async (req, res) => {
   const { otp, activationToken } = req.body;
 
@@ -86,6 +89,7 @@ export const verifyUser = TryCatch(async (req, res) => {
   });
 });
 
+// Login a user using email and password (traditional login)
 export const loginUser = TryCatch(async (req, res) => {
   const { email, password } = req.body;
 
@@ -116,6 +120,25 @@ export const loginUser = TryCatch(async (req, res) => {
   });
 });
 
+// Login or register user with Google OAuth
+export const googleAuth = passport.authenticate("google", {
+  scope: ["profile", "email"],
+});
+
+// Google callback handler for successful authentication
+export const googleAuthCallback = TryCatch(async (req, res) => {
+  const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, {
+    expiresIn: "15d",
+  });
+
+  res.json({
+    message: `Welcome back, ${req.user.name}`,
+    token,
+    user: req.user,
+  });
+});
+
+// Fetch the authenticated user's profile
 export const myProfile = TryCatch(async (req, res) => {
   const user = await User.findById(req.user._id);
 
@@ -128,6 +151,7 @@ export const myProfile = TryCatch(async (req, res) => {
   res.json({ user });
 });
 
+// Forgot password handler
 export const forgotPassword = TryCatch(async (req, res) => {
   const { email } = req.body;
 
@@ -155,6 +179,7 @@ export const forgotPassword = TryCatch(async (req, res) => {
   });
 });
 
+// Reset password handler
 export const resetPassword = TryCatch(async (req, res) => {
   const { token } = req.query;
 
